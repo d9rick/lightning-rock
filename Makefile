@@ -8,7 +8,7 @@ CXXFLAGS = -std=c++11 -Wall
 LDFLAGS = 
 
 # Makefile settings - Can be customized.
-APPNAME = myapp
+APPNAME = neuralnotwork
 EXT = .cpp
 SRCDIR = .
 OBJDIR = obj

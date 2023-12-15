@@ -33,3 +33,5 @@
 
 # User Added
 /obj/
+/data/
+/.vscode/
