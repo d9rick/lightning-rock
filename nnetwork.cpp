@@ -61,6 +61,16 @@ float neuron::getOutput()
 }
 
 /*
+calculates transfer derivative
+ since we are using the sigmoid function, derivative is calculated like:
+ derivative = output * (1.0 - output)
+*/ 
+float neuron::transferDerivative()
+{
+    return output * (1.0 - output);
+}
+
+/*
 -------------- Layer Implementation --------------
 */
 

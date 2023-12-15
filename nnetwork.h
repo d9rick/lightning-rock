@@ -15,6 +15,10 @@ private:
 
     // stores the neurons current output
     float output;
+
+    // stores error for a neuron, to be used in backpropogation
+    float error;
+
 public:
     // neuron constructor that randomly defines weights
     neuron(int numweights);
@@ -31,6 +35,10 @@ public:
     // sets the next output
     void setOutput(float output);
 
+    // calculates and returns transfer derivative
+    float transferDerivative();
+
+    // returns the stored output
     float getOutput();
 };
 
