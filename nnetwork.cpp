@@ -26,7 +26,7 @@ neuron::neuron(std::vector<float> newWeights)
 }
 
 // returns the weights vector
-std::vector<float>& neuron::getWeights()
+std::vector<float> &neuron::getWeights()
 {
     return weights;
 }
@@ -105,7 +105,7 @@ layer::layer(int numneurons, int numweights)
 }
 
 // returns the neurons array
-std::vector<neuron>& layer::getNeurons()
+std::vector<neuron> &layer::getNeurons()
 {
     return neurons;
 }
@@ -188,7 +188,7 @@ std::vector<float> neuralnetwork::forwardPropogate(std::vector<float> inputs)
     {
         // get current layer
         std::vector<float> nextInputs;
-        std::vector<neuron>& currNeurons = network[i].getNeurons();
+        std::vector<neuron> &currNeurons = network[i].getNeurons();
 
         // iterate thru neurons in current layer
         for (size_t j = 0; j < currNeurons.size(); j++)
@@ -224,7 +224,7 @@ void neuralnetwork::backwardPropogateError(std::vector<float> expected)
     for (int i = network.size() - 1; i >= 0; i--)
     {
         // get current operating layer
-        std::vector<neuron>& currLayer = network[i].getNeurons();
+        std::vector<neuron> &currLayer = network[i].getNeurons();
 
         // declare error array
         std::vector<float> errors = {};
@@ -263,3 +263,45 @@ void neuralnetwork::backwardPropogateError(std::vector<float> expected)
     }
 }
 
+void neuralnetwork::updateWeights(std::vector<float> inputs, float learningRate)
+{
+    // remove last term of inputs (it should not affect bias)
+    inputs.pop_back();
+
+    // loop thru network
+    for (size_t i = 0; i < network.size(); i++)
+    {
+        std::vector<neuron> &currLayer = network[i].getNeurons();
+
+        // input of currlayer = output of prev layer iff currLayer != input layer
+        if (i != 0)
+        {
+            std::vector<neuron> &prevLayer = network[i - 1].getNeurons();
+            for (size_t j = 0; j < prevLayer.size(); j++)
+            {
+                // set output
+                inputs[i] = prevLayer[i].getOutput();
+            }
+        }
+
+        // update the weights of the current layer
+        for (size_t j = 0; j < currLayer.size(); j++)
+        {
+            // get the weights of the current neuron
+            std::vector<float> &currWeights = currLayer[j].getWeights();
+
+            // get the current learning rate * error to speed up calculations
+            float learnError = learningRate * currLayer[j].getError();
+
+            // loop through all inputs
+            for (size_t k = 0; k < inputs.size(); k++)
+            {
+                // update weights
+                currWeights[k] -= learnError * inputs[k];
+            }
+
+            // update the bias (the last weight in the weights array)
+            currWeights[currWeights.size() - 1] -= learnError;
+        }
+    }
+}

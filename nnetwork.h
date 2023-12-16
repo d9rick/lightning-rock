@@ -107,6 +107,9 @@ public:
 
     // takes in the expected response for the network, and backpropogates the error to adjust the neurons
     void backwardPropogateError(std::vector<float> expected);
+
+    // update weights throughout the network
+    void updateWeights(std::vector<float> inputs, float learningRate);
 };
 
 #endif
