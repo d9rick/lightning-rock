@@ -24,6 +24,9 @@ int main(int argc, char** argv)
     // test inputs
     std::vector<float> inputs = {1.0, 0.0};
 
+    // test expected
+    std::vector<float> expected = {0.0, 1.0};
+
     // get outputs
     std::vector<float> outputs = network.forwardPropogate(inputs);
 
@@ -31,12 +34,21 @@ int main(int argc, char** argv)
     std::cout << "Network:" << std::endl;
     network.print();
 
-    // print outputs
-    std::cout << "Outputs: ";
-    for(float output : outputs)
-    {
-        std::cout << output << " ";
-    }
+    // backpropogate
+    std::cout << "Backpropogating..." << std::endl;
+    network.backwardPropogateError(expected);
+
+    // print network
+    std::cout << "Network:" << std::endl;
+    network.print();
+
+    // // print outputs
+    // std::cout << "Outputs: ";
+    // for(float output : outputs)
+    // {
+    //     std::cout << output << " ";
+    // }
+    
 
     return 0;
 }

@@ -16,8 +16,8 @@ private:
     // stores the neurons current output
     float output;
 
-    // stores error for a neuron, to be used in backpropogation
-    float error;
+    // stores error for a neuron, to be used in backpropogation (also referred to as "delta")
+    float error = 0;
 
 public:
     // neuron constructor that randomly defines weights
@@ -27,10 +27,13 @@ public:
     neuron(std::vector<float> predeterminedWeights);
 
     // returns the vector of weights
-    std::vector<float> getWeights();
+    std::vector<float>& getWeights();
 
     // returns the activation of a neuron given an input
     float activation(std::vector<float> input);
+
+    // returns the stored output
+    float getOutput();
 
     // sets the next output
     void setOutput(float output);
@@ -38,13 +41,19 @@ public:
     // calculates and returns transfer derivative
     float transferDerivative();
 
-    // returns the stored output
-    float getOutput();
+    // returns the stored error of a neuron
+    float getError();
+
+    // sets the error of a given neuron
+    void setError(float error);
+
+    // calculates the error based on the passed expected value
+    void calculateError(float expected);
 };
 
 /**
  * Layer Class to hold layers of neurons
-*/
+ */
 class layer
 {
 private:
@@ -56,24 +65,29 @@ public:
     layer(int numneurons, int numweights);
 
     // creates layer from neurons
-    layer(std::vector<neuron> neurons) : neurons(neurons){}
-    
+    layer(std::vector<neuron> neurons) : neurons(neurons) {}
+
     // returns the neurons array
-    std::vector<neuron> getNeurons();
+    std::vector<neuron>& getNeurons();
+
+    // returns the number of neurons in the layer
+    int numNeurons() const;
 
     // sets the current layer's neurons
     void setNeurons(std::vector<neuron> newNeurons);
 };
 
-
 /**
  * Neural Network Class
  * - Will store all nodes
-*/
+ */
 class neuralnetwork
 {
 private:
     std::vector<layer> network;
+
+    // calculates the transfer value when given the activation value of a neuron
+    float transfer(float activation);
 
 public:
     // initalizes the neuralnetwork
@@ -88,11 +102,11 @@ public:
     // prints the neural network
     void print();
 
-    // calculates the transfer value when given the activation value of a neuron
-    float transfer(float activation);
-
     // propogates inputs from input layer to output layer, and returns their output
     std::vector<float> forwardPropogate(std::vector<float> inputs);
+
+    // takes in the expected response for the network, and backpropogates the error to adjust the neurons
+    void backwardPropogateError(std::vector<float> expected);
 };
 
 #endif

@@ -1,7 +1,7 @@
 #include "nnetwork.h"
 #include <random>
 #include <iostream>
-
+#include <cmath>
 /*
 -------------- Neuron Implementation --------------
 */
@@ -14,7 +14,7 @@ neuron::neuron(int numweights)
     std::uniform_real_distribution<float> dist(0, 1);
 
     // add weights
-    for(int i = 0; i < numweights; i++)
+    for (int i = 0; i < numweights; i++)
     {
         weights.push_back(dist(mt));
     }
@@ -26,7 +26,7 @@ neuron::neuron(std::vector<float> newWeights)
 }
 
 // returns the weights vector
-std::vector<float> neuron::getWeights()
+std::vector<float>& neuron::getWeights()
 {
     return weights;
 }
@@ -40,7 +40,7 @@ float neuron::activation(std::vector<float> input)
 
     // sum the weights*inputs
     float activation = bias;
-    for(size_t i = 0; i < input.size(); i++)
+    for (size_t i = 0; i < input.size() - 1; i++)
     {
         activation += weights[i] * input[i];
     }
@@ -64,10 +64,30 @@ float neuron::getOutput()
 calculates transfer derivative
  since we are using the sigmoid function, derivative is calculated like:
  derivative = output * (1.0 - output)
-*/ 
+*/
 float neuron::transferDerivative()
 {
     return output * (1.0 - output);
+}
+
+// gets stored error and returns it
+float neuron::getError()
+{
+    return error;
+}
+
+// changes the stored error to the passed one
+void neuron::setError(float newError)
+{
+    error = newError;
+}
+/*
+    Calculates error based on passed expected output
+error = (output - expected) * transfer_derivative(output)
+*/
+void neuron::calculateError(float expected)
+{
+    error = (output - expected) * transferDerivative();
 }
 
 /*
@@ -78,21 +98,21 @@ float neuron::transferDerivative()
 layer::layer(int numneurons, int numweights)
 {
     // create hidden layer
-    for(int i = 0; i < numneurons; i++)
-    {  
+    for (int i = 0; i < numneurons; i++)
+    {
         neurons.push_back(neuron(numweights)); // add weights for each node + bias
     }
 }
 
 // returns the neurons array
-std::vector<neuron> layer::getNeurons()
+std::vector<neuron>& layer::getNeurons()
 {
     return neurons;
 }
 
 void layer::setNeurons(std::vector<neuron> newNeurons)
 {
-    this->neurons = neurons;
+    this->neurons = newNeurons;
 }
 
 /*
@@ -113,14 +133,14 @@ neuralnetwork::neuralnetwork(int numinput, int numhidden, int numoutput)
 }
 
 // creates network from given layers (if you have those for whatever reason lol)
-neuralnetwork::neuralnetwork(std::vector<layer> layers)  : network(layers){}
+neuralnetwork::neuralnetwork(std::vector<layer> layers) : network(layers) {}
 
 // create network from vector of vector of neurons
 // note : must be stored in order from input to output layer
 neuralnetwork::neuralnetwork(std::vector<std::vector<neuron>> neurons)
 {
     // construct layer from vector of neurons
-    for(std::vector<neuron> neuralLayer : neurons)
+    for (std::vector<neuron> neuralLayer : neurons)
     {
         // create layer
         layer newLayer(neuralLayer);
@@ -134,19 +154,22 @@ neuralnetwork::neuralnetwork(std::vector<std::vector<neuron>> neurons)
 void neuralnetwork::print()
 {
     int layernum = 0;
-    for(layer l : network)
+    for (layer l : network)
     {
         std::cout << "Layer: " << layernum << std::endl;
         layernum++;
         int neuronnum = 0;
-        for(neuron n : l.getNeurons())
+        for (neuron n : l.getNeurons())
         {
             std::cout << "  Neuron: " << neuronnum << std::endl;
             neuronnum++;
-            for(size_t i = 0; i < n.getWeights().size(); i++)
+            for (size_t i = 0; i < n.getWeights().size(); i++)
             {
                 std::cout << "    " << n.getWeights()[i] << std::endl;
             }
+            std::cout << "    Error: " << n.getError() << std::endl;
+            std::cout << "    Output: " << n.getOutput() << std::endl;
+            std::cout << "    Transfer: " << n.transferDerivative() << std::endl;
         }
     }
 }
@@ -155,22 +178,26 @@ void neuralnetwork::print()
 // sigmoid : output = 1 / (1 + e^(-activation))
 float neuralnetwork::transfer(float activation)
 {
-    return 1.0 / (1.0 + std::pow(M_e, -1*activation));
+    return 1.0f / (1.0f + std::exp(-activation));
 }
 
 std::vector<float> neuralnetwork::forwardPropogate(std::vector<float> inputs)
 {
     // start propogation from layer 1
-    for(layer currLayer : network)
+    for (size_t i = 0; i < network.size(); i++)
     {
+        // get current layer
         std::vector<float> nextInputs;
-        for(neuron currNeuron : currLayer.getNeurons())
+        std::vector<neuron>& currNeurons = network[i].getNeurons();
+
+        // iterate thru neurons in current layer
+        for (size_t j = 0; j < currNeurons.size(); j++)
         {
             // calculate the transfer for the given neuron
-            float transferInput = transfer(currNeuron.activation(inputs));
+            float transferInput = transfer(currNeurons[j].activation(inputs));
 
             // store neuron output for the backpropogation algo
-            currNeuron.setOutput(transferInput);
+            currNeurons[j].setOutput(transferInput);
 
             // add to next layer of inputs
             nextInputs.push_back(transferInput);
@@ -181,7 +208,58 @@ std::vector<float> neuralnetwork::forwardPropogate(std::vector<float> inputs)
         // clear nextInputs so we can rewrite it next time
         nextInputs.clear();
     }
-    
+
     // after going thru all layers, inputs should be the transfer of the last layer of neurons
     return inputs;
 }
+
+/*
+    Calculates the error for each neuron in each layer of the network
+error of output neuron = (output - expected) * transfer_derivative(output)
+error of hidden neuron = (weight_k * error_j) * transfer_derivative(output)
+*/
+void neuralnetwork::backwardPropogateError(std::vector<float> expected)
+{
+    // iterate through the layers backwards
+    for (int i = network.size() - 1; i >= 0; i--)
+    {
+        // get current operating layer
+        std::vector<neuron>& currLayer = network[i].getNeurons();
+
+        // declare error array
+        std::vector<float> errors = {};
+
+        // calculate error for hidden layers
+        if (i != (int)network.size() - 1)
+        {
+            for (size_t j = 0; j < currLayer.size(); j++)
+            {
+                float error = 0.0;
+                // iterate thru next layer and get error based on this layer's weight
+                for (size_t k = 0; k < network[i + 1].getNeurons().size(); k++)
+                {
+                    error += (network[i + 1].getNeurons()[k].getWeights()[j] * network[i + 1].getNeurons()[k].getError());
+                }
+                // add error to total error array
+                errors.push_back(error);
+            }
+        }
+        // calculate error for output layer
+        else
+        {
+            for (size_t j = 0; j < currLayer.size(); j++)
+            {
+                // just add diff between expected and output for output layer
+                errors.push_back(currLayer[j].getOutput() - expected[j]);
+            }
+        }
+
+        // update errors in neurons
+        for (size_t j = 0; j < currLayer.size(); j++)
+        {
+            // error = errors[j] * currLayer[j].transferDerivative()
+            currLayer[j].setError(errors[j] * currLayer[j].transferDerivative());
+        }
+    }
+}
+
