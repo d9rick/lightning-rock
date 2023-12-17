@@ -110,6 +110,9 @@ public:
 
     // update weights throughout the network
     void updateWeights(std::vector<float> inputs, float learningRate);
+
+    // trains the neural network when given trainingData, learning rate, number of epochs, and number of outputs
+    void trainNetwork(std::vector<std::vector<float>> trainingData, float learnRate, int numEpoch, int numOutputs);
 };
 
 #endif

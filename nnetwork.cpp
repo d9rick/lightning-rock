@@ -305,3 +305,39 @@ void neuralnetwork::updateWeights(std::vector<float> inputs, float learningRate)
         }
     }
 }
+
+// function to train the neural network
+void neuralnetwork::trainNetwork(std::vector<std::vector<float>> trainingData, float learnRate, int numEpoch, int numOutputs)
+{
+    // run the training sequence epoch number of times
+    for(int e = 0; e < numEpoch; e++)
+    {
+        // set up sum error
+        float sumerror = 0;
+
+        // loop through inputs in dataset
+        for(std::vector<float>& inputs : trainingData)
+        {
+            // forward propogate and get output
+            std::vector<float> outputs = forwardPropogate(inputs);
+
+            // get the expected outputs
+            std::vector<float> expected(numOutputs, 0.0);
+            expected[static_cast<int>(inputs.back())] = 1.0;
+
+            // calculate error and update the error sum
+            for(size_t i = 0; i < expected.size(); i++)
+            {
+                sumerror += std::pow(expected[i] - outputs[i], 2);
+            }
+
+            // backprop the neural network to update the errors
+            backwardPropogateError(expected);
+
+            // update the weights
+            updateWeights(inputs, learnRate);
+        }
+
+        std::cout << ">epoch= " << e+1 << ", l-rate= " << learnRate << ", error=" << sumerror << std::endl;
+    }
+}
