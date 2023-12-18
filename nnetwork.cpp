@@ -40,7 +40,7 @@ float neuron::activation(std::vector<float> input)
 
     // sum the weights*inputs
     float activation = bias;
-    for (size_t i = 0; i < input.size() - 1; i++)
+    for (size_t i = 0; i < weights.size() - 1; i++)
     {
         activation += weights[i] * input[i];
     }
@@ -280,7 +280,7 @@ void neuralnetwork::updateWeights(std::vector<float> inputs, float learningRate)
             for (size_t j = 0; j < prevLayer.size(); j++)
             {
                 // set output
-                inputs[i] = prevLayer[i].getOutput();
+                inputs[j] = prevLayer[j].getOutput();
             }
         }
 
@@ -340,4 +340,25 @@ void neuralnetwork::trainNetwork(std::vector<std::vector<float>> trainingData, f
 
         std::cout << ">epoch= " << e+1 << ", l-rate= " << learnRate << ", error=" << sumerror << std::endl;
     }
+}
+
+// returns the most likely output based on passed inputs
+int neuralnetwork::predict(std::vector<float> inputs)
+{
+    // forward propogate to get outputs
+    std::vector<float> outputs;
+    outputs = forwardPropogate(inputs);
+
+    // find largest value in outputs & return
+    // linear search:
+    int maxIndex = 0;
+    for(size_t i = 0; i < outputs.size(); i++)
+    {
+        if(outputs[i] > outputs[maxIndex])
+        {
+            maxIndex = i;
+        }
+    }
+
+    return maxIndex;
 }

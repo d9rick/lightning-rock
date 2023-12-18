@@ -4,10 +4,8 @@
 #include <set>
 #include <sstream>
 
-// for testing
-const int numinput  = 2;
-const int numhidden = 1;
-const int numoutput = 2;
+void normalizeDataSet(std::vector<std::vector<float>>& dataset, std::vector<std::pair<float, float>> minmax);
+std::vector<std::pair<float, float>> datasetMinMax(std::vector<std::vector<float>> dataset);
 
 // takes inputs in from a file
 // note: assumes last value on line is expected, rest are inputs
@@ -63,42 +61,6 @@ std::vector<std::vector<float>> getTrainingData(char* filename, int &numinputs, 
     return dataset;
 }
 
-
-void oldTest()
-{
-    // hidden layer
-    std::vector<neuron> hiddenneurons = {neuron(std::vector<float>{0.13436424411240122, 0.8474337369372327, 0.763774618976614})};
-    layer hiddenLayer(hiddenneurons);
-
-    // output layer
-    std::vector<neuron> outputneurons = {neuron(std::vector<float>{0.2550690257394217, 0.49543508709194095}), neuron(std::vector<float>{0.4494910647887381, 0.651592972722763})};
-    layer outputLayer(outputneurons);
-
-    // create network
-    neuralnetwork network(std::vector<layer>{hiddenLayer,outputLayer});
-
-    // test inputs
-    std::vector<float> inputs = {1.0, 0.0};
-
-    // test expected
-    std::vector<float> expected = {0.0, 1.0};
-
-    // get outputs
-    std::vector<float> outputs = network.forwardPropogate(inputs);
-
-    // print network
-    std::cout << "Network:" << std::endl;
-    network.print();
-
-    // backpropogate
-    std::cout << "Backpropogating..." << std::endl;
-    network.backwardPropogateError(expected);
-
-    // print network
-    std::cout << "Network:" << std::endl;
-    network.print();
-}
-
 int main(int argc, char** argv)
 {   
     if(argc != 2)
@@ -111,9 +73,9 @@ int main(int argc, char** argv)
     int numinput = 0, numoutput = 0;
 
     // user set variables
-    const int numhidden = 4;
-    const float learningRate = .5;
-    const int epoch = 20;
+    const int numhidden = 5;
+    const float learningRate = .3;
+    const int epoch = 500;
 
     // call file parser
     std::vector<std::vector<float>> trainingdata = getTrainingData(argv[1], numinput, numoutput);
@@ -124,6 +86,10 @@ int main(int argc, char** argv)
         std::cerr << "YO there isn't anything in this data set bro??" << std::endl;
         return -1;
     }
+
+    // normalize dataset
+    std::vector<std::pair<float, float>> minmax = datasetMinMax(trainingdata);
+    normalizeDataSet(trainingdata, minmax);
     
     //print data vals
     std::cout << "Training data contains...\n# Inputs: " << numinput << "\n# Outputs: " << numoutput << std::endl << std::endl;
@@ -135,11 +101,97 @@ int main(int argc, char** argv)
     // print network
     std::cout   << "Created NeuralNotwork with...\n# Inputs: " << numinput
                 << "\n# Hidden: " << numhidden << "\n# Outputs: " << numoutput << std::endl << std::endl;
-    //network.print();
+    network.forwardPropogate(trainingdata[0]);
+    network.print();
 
     // train network
-    std::cout << "Training... " << std::endl;
+    std::cout << "\nTraining... " << std::endl;
     network.trainNetwork(trainingdata, learningRate, epoch, numoutput);
 
+    // set up for predictions
+    std::cout << "\nChecking network accuracy..." << std::endl;
+
+    // set up accuracy vars
+    int numTrials = 0;
+    int numCorrect = 0;
+
+    // run trials
+    for(std::vector<float>& input : trainingdata)
+    {
+        // get expected
+        int expected = input.back();
+        std::cout << "Expected:  " << expected << ", ";
+
+        // get predicted
+        int predicted = network.predict(input);
+        std::cout << "Predicted: " << predicted << std::endl;
+
+        // check if expected matches predictions
+        if(expected == predicted)
+        {
+            numCorrect++;
+        }
+
+        // increment trials
+        numTrials++;
+    }
+
+    // check accuracy & print results
+    float accuracy = float(numCorrect)/float(numTrials);
+    std::cout << std::endl << "RESULTS:\n";
+    std::cout << "# Trials:  " << numTrials << std::endl;
+    std::cout << "# Correct: " << numCorrect << std::endl;
+    std::cout << "Accuracy:  " << accuracy*100 << '%' << std::endl;
+
     return 0;
+}
+
+// ------------------------ Data Helper Functions ------------------------
+
+// returns a vector of pairs of min and max values for each column in the dataset
+std::vector<std::pair<float, float>> datasetMinMax(std::vector<std::vector<float>> dataset)
+{
+    // init minmax
+    std::vector<std::pair<float, float>> minmax;
+
+    // init minmax to first row of dataset
+    for(size_t i = 0; i < dataset[0].size(); i++)
+    {
+        minmax.push_back(std::pair<float, float>(dataset[0][i], dataset[0][i]));
+    }
+
+    // loop through dataset
+    for(std::vector<float> row : dataset)
+    {
+        // loop through row
+        for(size_t i = 0; i < row.size(); i++)
+        {
+            // update minmax
+            if(row[i] < minmax[i].first)
+            {
+                minmax[i].first = row[i];
+            }
+            else if(row[i] > minmax[i].second)
+            {
+                minmax[i].second = row[i];
+            }
+        }
+    }
+
+    return minmax;
+}
+
+// normalizes the dataset
+void normalizeDataSet(std::vector<std::vector<float>>& dataset, std::vector<std::pair<float, float>> minmax)
+{
+    // loop through dataset
+    for(std::vector<float>& row : dataset)
+    {
+        // loop through row
+        for(size_t i = 0; i < row.size(); i++)
+        {
+            // normalize
+            row[i] = (row[i] - minmax[i].first) / (minmax[i].second - minmax[i].first);
+        }
+    }
 }

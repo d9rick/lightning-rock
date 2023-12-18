@@ -14,7 +14,7 @@ private:
     std::vector<float> weights;
 
     // stores the neurons current output
-    float output;
+    float output = 0;
 
     // stores error for a neuron, to be used in backpropogation (also referred to as "delta")
     float error = 0;
@@ -113,6 +113,9 @@ public:
 
     // trains the neural network when given trainingData, learning rate, number of epochs, and number of outputs
     void trainNetwork(std::vector<std::vector<float>> trainingData, float learnRate, int numEpoch, int numOutputs);
+
+    // returns the index in the network output with the highest probability
+    int predict(std::vector<float> inputs);
 };
 
 #endif
