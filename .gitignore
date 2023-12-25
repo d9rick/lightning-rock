@@ -32,6 +32,4 @@
 *.app
 
 # User Added
-/obj/
-/data/
 /.vscode/
