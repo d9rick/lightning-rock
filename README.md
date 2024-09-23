@@ -1,4 +1,4 @@
-# neural-notwork
+# Lightning Rock
 Simple neural network written in C++ while following Jason Brownlee's tutorial in Python (linked below). It is modular in nature and can be used for other functionalities.
 
 # Compilation
